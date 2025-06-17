@@ -1,30 +1,34 @@
-# Simple EAN13 generator
+# Simple EAN13 Generator
 
-## Pre-requirement
-#### 1. Install python/python3
-#### 2, Create a virtual environment
+## Prerequisites
+1. Install Python/Python3
+2. Create a virtual environment
 ```bash
 python3 -m venv venv
 ```
-#### 3. Install barcode package
+3. Install the barcode package
 ```bash
 pip install python-barcode
 ```
-## How to use
-#### 1. Perpare the code
-##### Put the code in barcode.txt line by line 
-#### 1. Start a virtual environment
+
+## How to Use
+1. Prepare the code
+Put the codes in barcode.txt, one per line
+2. Start the virtual environment
 ```bash
 source venv/bin/activate
 ```
-#### 2. Run
+For other platforms, please refer to [Python's venv documentation](https://docs.python.org/3/library/venv.html#how-venvs-work).
+
+3. Run the script
 ```bash
 python3 barcode_ean13.py
 ```
-## Change it to different formet
-#### You can change any format you want from python-barcode 
 
-`barcode_ean13.py line 17`
+## Changing the Barcode Format
+You can change the barcode format by modifying line 17 in `barcode_ean13.py`:
 ```bash
 EAN = barcode.get_barcode_class('barcode type you like')
 ```
+
+For more information, visit the [python-barcode documentation](https://python-barcode.readthedocs.io/en/stable/getting-started.html?highlight=get_barcode_class#interactive-generating-an-svg).
