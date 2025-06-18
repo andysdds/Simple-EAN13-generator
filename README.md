@@ -6,7 +6,11 @@
 ```bash
 python3 -m venv venv
 ```
-3. Install the barcode package
+3. Start the virtual environment
+```bash
+source venv/bin/activate
+```
+4. Install the barcode package
 ```bash
 pip install python-barcode
 ```
@@ -14,7 +18,7 @@ pip install python-barcode
 ## How to Use
 1. Prepare the code
 Put the codes in barcode.txt, one per line
-2. Start the virtual environment
+2. Start the virtual environment if you are not in
 ```bash
 source venv/bin/activate
 ```

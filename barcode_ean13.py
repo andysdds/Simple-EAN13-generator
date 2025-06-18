@@ -13,6 +13,10 @@ def generate_barcode(data):
         "module_height": 9,
         "write_text": True,
         "quiet_zone": 5,
+        "font_size": 8,
+        "center_text":True,
+        "text_distance": 0.1,
+        "text_font": "Arial"
     }
     EAN = barcode.get_barcode_class('ean13-guard')
     ean = EAN(data)
@@ -26,6 +30,13 @@ def generate_barcode(data):
     # Remove line containing &gt;
     lines = [line for line in lines if "&gt;" not in line]
     
+    # Add letter-spacing to text elements
+    lines = [line.replace('text-anchor:middle;', f'text-anchor:middle;letter-spacing:{options["text_distance"]}mm;') for line in lines]
+    
+    # issue : https://github.com/WhyNotHugo/python-barcode/issues/104
+    # I use replace here,
+    lines = [line.replace('text-anchor:middle;', f'text-anchor:middle;font-family:{options["text_font"]};') for line in lines]
+        
     # Write back to file
     with open(f"{svg_path}.svg", 'w') as file:
         file.writelines(lines)
