@@ -1,0 +1,78 @@
+/* App-wide styling */
+body {
+    background-color: #0f1116;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 20px;
+}
+
+#hero {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-content {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.text-panel {
+    flex: 1;
+}
+
+.text-panel textarea {
+    width: 100%;
+    min-height: 140px;
+    box-sizing: border-box;
+}
+
+#links {
+    width: 400px;
+    flex-shrink: 0;
+    text-align: left;
+    font-size: x-large;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+#links a {
+    color: white;
+    text-decoration: none;
+    margin-top: 20px;
+    margin: 10px 0px;
+    border: white 1px solid;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+#links a:hover {
+    background-color: #1f1f1f;
+    cursor: pointer;
+}
+
+#header {
+    max-width: 1200px;
+}
+
+@media (max-width: 900px) {
+    .hero-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #links {
+        width: 100%;
+    }
+}
+
+
+
