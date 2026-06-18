@@ -8,9 +8,9 @@ mod Ean13setting;
 use Ean13setting::Ean13Setting;
 
 mod Ean13Export;
-use Ean13Export::{export_ean13, ExportProgress};
+use Ean13Export::{export_ean13, ExportFormat, ExportProgress};
 
-use crate::Ean13setting::Ean13Settings;
+use crate::Ean13setting::load_settings;
 
 fn main() {
     dioxus::launch(App);
@@ -21,6 +21,7 @@ fn App() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Title { "EAN13 Barcode Generator" }
         MainApp {}
 
     }
@@ -29,7 +30,8 @@ fn App() -> Element {
 #[component]
 pub fn MainApp() -> Element {
     let mut input_text = use_signal(|| String::new());
-    let mut ean13_settings = use_signal(|| Ean13Settings::default());
+    let mut ean13_settings = use_signal(|| load_settings());
+    let mut export_format = use_signal(|| ExportFormat::Svg);
     let export_progress = use_signal(|| None::<ExportProgress>);
     let mut export_cancel = use_signal(|| false);
     rsx! {
@@ -41,13 +43,30 @@ pub fn MainApp() -> Element {
                 TextAreaBox { on_submit: move |text| input_text.set(text) }
                 div { style: "display: flex; flex-direction: column; gap: 10px;flex:1;",
                     Ean13Setting { on_setting_changed: move |settings| ean13_settings.set(settings) }
+                    div { style: "display: flex; flex-direction: row; align-items: center; gap: 8px;",
+                        label { style: "font-size: medium;", "Export format" }
+                        select {
+                            style: "flex: 1; height: 30px;",
+                            value: match export_format() {
+                                ExportFormat::Svg => "svg",
+                                ExportFormat::Pdf => "pdf",
+                            },
+                            oninput: move |e| {
+                                let fmt = if e.value() == "pdf" { ExportFormat::Pdf } else { ExportFormat::Svg };
+                                export_format.set(fmt);
+                            },
+                            option { value: "svg", "SVG" }
+                            option { value: "pdf", "PDF" }
+                        }
+                    }
                     button {
                         style: "height:40px;;",
                         onclick: move |_| {
                             let input = input_text();
                             let settings = ean13_settings();
+                            let format = export_format();
                             spawn(async move {
-                                export_ean13(input, settings, export_progress, export_cancel).await;
+                                export_ean13(input, settings, format, export_progress, export_cancel).await;
                             });
                         },
                         "Export"

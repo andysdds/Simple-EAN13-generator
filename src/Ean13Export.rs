@@ -11,6 +11,36 @@ pub struct ExportProgress {
     pub total: usize,
 }
 
+/// File format to write when exporting barcodes.
+#[derive(Clone, Copy, PartialEq)]
+pub enum ExportFormat {
+    Svg,
+    Pdf,
+}
+
+impl ExportFormat {
+    /// File extension (without the dot) for this format.
+    pub fn extension(self) -> &'static str {
+        match self {
+            ExportFormat::Svg => "svg",
+            ExportFormat::Pdf => "pdf",
+        }
+    }
+}
+
+/// Convert an SVG document into a standalone PDF byte buffer.
+fn svg_to_pdf(svg: &str) -> Option<Vec<u8>> {
+    let mut options = svg2pdf::usvg::Options::default();
+    options.fontdb_mut().load_system_fonts();
+    let tree = svg2pdf::usvg::Tree::from_str(svg, &options).ok()?;
+    svg2pdf::to_pdf(
+        &tree,
+        svg2pdf::ConversionOptions::default(),
+        svg2pdf::PageOptions::default(),
+    )
+    .ok()
+}
+
 /// Build a standalone SVG document for a single barcode line.
 /// Returns `None` when the line does not contain a valid EAN-13 payload.
 pub fn generate_svg(line: &str, s: &Ean13Settings) -> Option<String> {
@@ -134,6 +164,7 @@ fn text_el(x: f64, y: f64, ch: char, s: &Ean13Settings) -> String {
 pub async fn export_ean13(
     input_text: String,
     settings: Ean13Settings,
+    format: ExportFormat,
     mut progress: Signal<Option<ExportProgress>>,
     mut cancel: Signal<bool>,
 ) {
@@ -169,8 +200,17 @@ pub async fn export_ean13(
         if let Some(svg) = generate_svg(line, &settings) {
             let digits: String = line.chars().filter(|c| c.is_ascii_digit()).collect();
             let stem = if digits.is_empty() { "barcode".to_string() } else { digits };
-            let name = format!("{:03}_{}.svg", idx + 1, stem);
-            let _ = std::fs::write(dest.join(name), svg);
+            let name = format!("{:03}_{}.{}", idx + 1, stem, format.extension());
+            match format {
+                ExportFormat::Svg => {
+                    let _ = std::fs::write(dest.join(name), svg);
+                }
+                ExportFormat::Pdf => {
+                    if let Some(pdf) = svg_to_pdf(&svg) {
+                        let _ = std::fs::write(dest.join(name), pdf);
+                    }
+                }
+            }
         }
         progress.set(Some(ExportProgress { current: idx + 1, total }));
         // Yield so the UI can repaint the progress bar between files.

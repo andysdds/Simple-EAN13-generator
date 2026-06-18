@@ -1,10 +1,12 @@
 [application]
+name = "rust-ean13"
 
 [web.app]
 
 [bundle]
 identifier = "com,Andy.rustEan13"
 publisher = "Andy"
+name = "rust-ean13"
 
 # HTML title tag content
 title = "rust-ean13"

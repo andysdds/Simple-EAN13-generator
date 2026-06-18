@@ -1,6 +1,8 @@
 use dioxus::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Ean13Settings {
 
     pub bar_width: f64,
@@ -44,25 +46,53 @@ impl Default for Ean13Settings {
     }
 }
 
+/// Path to the persisted settings file (`<config_dir>/rust-ean13/settings.json`).
+fn settings_path() -> Option<std::path::PathBuf> {
+    let mut dir = dirs::config_dir()?;
+    dir.push("rust-ean13");
+    std::fs::create_dir_all(&dir).ok()?;
+    dir.push("settings.json");
+    Some(dir)
+}
+
+/// Load settings from local storage, falling back to defaults on any error.
+pub fn load_settings() -> Ean13Settings {
+    settings_path()
+        .and_then(|path| std::fs::read_to_string(path).ok())
+        .and_then(|contents| serde_json::from_str(&contents).ok())
+        .unwrap_or_default()
+}
+
+/// Persist settings to local storage. Errors are ignored (best-effort save).
+pub fn save_settings(settings: &Ean13Settings) {
+    if let Some(path) = settings_path() {
+        if let Ok(json) = serde_json::to_string_pretty(settings) {
+            let _ = std::fs::write(path, json);
+        }
+    }
+}
+
 #[component]
 pub fn Ean13Setting(on_setting_changed: EventHandler<Ean13Settings>) -> Element {
+    // Load persisted settings once when the component mounts.
+    let loaded = use_hook(load_settings);
     let mut data = use_signal(|| String::from("590123412345"));
-    let mut bar_width = use_signal(|| 2.0_f64);
-    let mut bar_height = use_signal(|| 80.0_f64);
-    let mut quiet_zone = use_signal(|| 10.0_f64);
-    let mut show_text = use_signal(|| true);
-    let mut foreground = use_signal(|| String::from("#000000"));
-    let mut background = use_signal(|| String::from("#ffffff"));
-    let mut font = use_signal(|| String::from("monospace"));
-    let mut text_size = use_signal(|| 16.0_f64);
-    let mut show_left_guard = use_signal(|| true);
-    let mut show_center_guard = use_signal(|| true);
-    let mut show_right_guard = use_signal(|| true);
-    let mut left_guard_extra = use_signal(|| 10.0_f64);
-    let mut center_guard_extra = use_signal(|| 10.0_f64);
-    let mut right_guard_extra = use_signal(|| 10.0_f64);
-    let mut text_between_guards = use_signal(|| false);
-    let mut text_between_spacing = use_signal(|| 0.0_f64);
+    let mut bar_width = use_signal(|| loaded.bar_width);
+    let mut bar_height = use_signal(|| loaded.bar_height);
+    let mut quiet_zone = use_signal(|| loaded.quiet_zone);
+    let mut show_text = use_signal(|| loaded.show_text);
+    let mut foreground = use_signal(|| loaded.foreground.clone());
+    let mut background = use_signal(|| loaded.background.clone());
+    let mut font = use_signal(|| loaded.font.clone());
+    let mut text_size = use_signal(|| loaded.text_size);
+    let mut show_left_guard = use_signal(|| loaded.show_left_guard);
+    let mut show_center_guard = use_signal(|| loaded.show_center_guard);
+    let mut show_right_guard = use_signal(|| loaded.show_right_guard);
+    let mut left_guard_extra = use_signal(|| loaded.left_guard_extra);
+    let mut center_guard_extra = use_signal(|| loaded.center_guard_extra);
+    let mut right_guard_extra = use_signal(|| loaded.right_guard_extra);
+    let mut text_between_guards = use_signal(|| loaded.text_between_guards);
+    let mut text_between_spacing = use_signal(|| loaded.text_between_spacing);
 
     let svg_height = use_memo(move || {
         let mut h = bar_height();
@@ -102,7 +132,9 @@ pub fn Ean13Setting(on_setting_changed: EventHandler<Ean13Settings>) -> Element 
     });
 
     use_effect(move || {
-        on_setting_changed.call(settings());
+        let current = settings();
+        save_settings(&current);
+        on_setting_changed.call(current);
     });
 
     // Recompute the rendered barcode whenever any setting changes.
