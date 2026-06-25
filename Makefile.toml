@@ -14,12 +14,14 @@ script=[
     "cd ./target/dx/${CARGO_MAKE_CRATE_NAME}/release/macos && zip -r RustEan13_${CARGO_MAKE_CRATE_VERSION}_aarch64.zip RustEan13.app"
 ]
 
-# CI variants: non-interactive ad-hoc codesigning so the build can run unattended in GitHub Actions.
+# CI variants: non-interactive codesigning using the identity provided via the
+# MACOS_SIGNING_IDENTITY env var (set by the GitHub Actions workflow after importing
+# the certificate from the CERTIFICATE_BASE64 secret).
 [tasks.build-mac-intel-ci]
 script=[
     "echo 'Start Build Intel Mac Desktop (CI)'",
     "dx build --platform desktop --release --target x86_64-apple-darwin",
-    "codesign --force --deep --sign - './target/dx/${CARGO_MAKE_CRATE_NAME}/release/macos/RustEan13.app'",
+    "codesign --force --deep --options runtime --sign \"${MACOS_SIGNING_IDENTITY}\" './target/dx/${CARGO_MAKE_CRATE_NAME}/release/macos/RustEan13.app'",
     "cd ./target/dx/${CARGO_MAKE_CRATE_NAME}/release/macos && zip -r RustEan13_${CARGO_MAKE_CRATE_VERSION}_x86_64.zip RustEan13.app"
 ]
 
@@ -27,6 +29,6 @@ script=[
 script=[
     "echo 'Start Build ARM Mac Desktop (CI)'",
     "dx build --platform desktop --release --target aarch64-apple-darwin",
-    "codesign --force --deep --sign - './target/dx/${CARGO_MAKE_CRATE_NAME}/release/macos/RustEan13.app'",
+    "codesign --force --deep --options runtime --sign \"${MACOS_SIGNING_IDENTITY}\" './target/dx/${CARGO_MAKE_CRATE_NAME}/release/macos/RustEan13.app'",
     "cd ./target/dx/${CARGO_MAKE_CRATE_NAME}/release/macos && zip -r RustEan13_${CARGO_MAKE_CRATE_VERSION}_aarch64.zip RustEan13.app"
 ]
