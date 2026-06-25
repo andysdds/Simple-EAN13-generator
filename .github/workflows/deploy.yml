@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version from Cargo.toml
+        id: version
+        run: |
+          VERSION=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"(.*)".*/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Project version: $VERSION"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin, aarch64-apple-darwin
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install dioxus-cli and cargo-make
+        run: |
+          cargo install dioxus-cli --locked
+          cargo install cargo-make --locked
+
+      - name: Build Intel (x86_64) bundle
+        run: cargo make build-mac-intel-ci
+
+      - name: Build ARM (aarch64) bundle
+        run: cargo make build-mac-arm-ci
+
+      - name: Create release and upload artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          MACOS_DIR="./target/dx/rust-ean13/release/macos"
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --target "${GITHUB_SHA}" \
+            --generate-notes \
+            "${MACOS_DIR}/RustEan13_${VERSION}_x86_64.zip" \
+            "${MACOS_DIR}/RustEan13_${VERSION}_aarch64.zip"

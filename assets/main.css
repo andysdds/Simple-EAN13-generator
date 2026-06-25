@@ -11,7 +11,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
 }
 
 .hero-content {
@@ -35,8 +35,7 @@ body {
 }
 
 #links {
-    width: 400px;
-    flex-shrink: 0;
+    width: 100%;
     text-align: left;
     font-size: x-large;
     color: white;

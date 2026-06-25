@@ -11,6 +11,7 @@ pub struct Ean13Settings {
     pub show_text: bool,
     pub foreground: String,
     pub background: String,
+    pub transparent_background: bool,
     pub font: String,
     pub text_size: f64,
     pub show_left_guard: bool,
@@ -32,6 +33,7 @@ impl Default for Ean13Settings {
             show_text: true,
             foreground: String::from("#000000"),
             background: String::from("#ffffff"),
+            transparent_background: false,
             font: String::from("monospace"),
             text_size: 16.0,
             show_left_guard: true,
@@ -83,6 +85,7 @@ pub fn Ean13Setting(on_setting_changed: EventHandler<Ean13Settings>) -> Element 
     let mut show_text = use_signal(|| loaded.show_text);
     let mut foreground = use_signal(|| loaded.foreground.clone());
     let mut background = use_signal(|| loaded.background.clone());
+    let mut transparent_background = use_signal(|| loaded.transparent_background);
     let mut font = use_signal(|| loaded.font.clone());
     let mut text_size = use_signal(|| loaded.text_size);
     let mut show_left_guard = use_signal(|| loaded.show_left_guard);
@@ -112,6 +115,26 @@ pub fn Ean13Setting(on_setting_changed: EventHandler<Ean13Settings>) -> Element 
         }
     };
 
+    // Effective fill used for the SVG background rect ("transparent" hides it).
+    let bg_fill = use_memo(move || {
+        if transparent_background() {
+            String::from("transparent")
+        } else {
+            background()
+        }
+    });
+
+    // Container background — a checkerboard makes transparency visible in the preview.
+    let preview_bg = use_memo(move || {
+        if transparent_background() {
+            String::from(
+                "background-color: #fff; background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0px;",
+            )
+        } else {
+            format!("background: {};", background())
+        }
+    });
+
     let settings = use_memo(move || Ean13Settings {
         bar_width: bar_width(),
         bar_height: bar_height(),
@@ -119,6 +142,7 @@ pub fn Ean13Setting(on_setting_changed: EventHandler<Ean13Settings>) -> Element 
         show_text: show_text(),
         foreground: foreground(),
         background: background(),
+        transparent_background: transparent_background(),
         font: font(),
         text_size: text_size(),
         show_left_guard: show_left_guard(),
@@ -158,7 +182,7 @@ pub fn Ean13Setting(on_setting_changed: EventHandler<Ean13Settings>) -> Element 
             // Preview
             div {
                 class: "ean13-preview",
-                style: "display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; border: 1px solid #444; border-radius: 5px; background: {background};",
+                style: "display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; border: 1px solid #444; border-radius: 5px; {preview_bg}",
                 match render() {
                     Some(bc) => rsx! {
                         svg {
@@ -170,7 +194,7 @@ pub fn Ean13Setting(on_setting_changed: EventHandler<Ean13Settings>) -> Element 
                                 y: 0,
                                 width: "{bc.total_w}",
                                 height: "{svg_height()}",
-                                fill: "{background}",
+                                fill: "{bg_fill}",
                             }
                             for (x , w , guard_type) in bc.bars.iter().cloned() {
                                 rect {
@@ -479,8 +503,20 @@ pub fn Ean13Setting(on_setting_changed: EventHandler<Ean13Settings>) -> Element 
                     input {
                         r#type: "color",
                         value: "{background}",
+                        disabled: transparent_background(),
                         oninput: move |e| background.set(e.value()),
                     }
+                }
+
+                div {
+                    class: "setting-row",
+                    style: "display: flex; flex-direction: row; align-items: center; gap: 8px;",
+                    input {
+                        r#type: "checkbox",
+                        checked: transparent_background(),
+                        oninput: move |e| transparent_background.set(e.checked()),
+                    }
+                    label { style: "font-size: medium;", "Transparent background" }
                 }
             }
         }

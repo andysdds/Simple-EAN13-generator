@@ -94,7 +94,7 @@ pub fn generate_svg(line: &str, s: &Ean13Settings) -> Option<String> {
         "<rect x=\"0\" y=\"0\" width=\"{w}\" height=\"{h}\" fill=\"{bg}\"/>",
         w = bc.total_w,
         h = total_h,
-        bg = s.background
+        bg = if s.transparent_background { "none" } else { s.background.as_str() }
     ));
 
     for (x, w, gt) in bc.bars.iter().cloned() {
